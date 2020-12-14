@@ -15,7 +15,7 @@ class quantiser(nn.Module):
             self.label_map = label_map
         
         # the off state will default to a gaussian with mean 0 and variance 0.1
-        self.off_state = torch.stack([torch.zeroes(latent_dim), torch.ones(latent_dim)*0.1], dim=-1).view(1, latent_dim, 2)
+        self.off_state = torch.stack([torch.zeros(latent_dim), torch.ones(latent_dim)*0.1], dim=-1).view(1, latent_dim, 2)
 
         if (on_states != None):
             assert isinstance(on_states, param.Parameter) and on_states.requires_grad
@@ -32,7 +32,7 @@ class quantiser(nn.Module):
 
         self.dist_metric = dist_metric #TODO: consider changing to maha cosine dist instead but need to find new off state. Also, check if using maha dist will cause hypersphere collapse
         
-    def forward(self, input_w, mode):
+    def forward(self, input_mu, input_sig, mode):
         # cosine problems: where is off? Since off cannot be at 0 anymore
         # maha dist prob: possibility that the means will collapse to origin
         # also consider using KL divergence and then sampling the quantised distribution instead
@@ -40,7 +40,7 @@ class quantiser(nn.Module):
         for i in range(self.on_states.shape[0]):
             mus = self.on_states[i, :, 0]
             sigs = self.on_states[i, :, 1]
-            dists.append(self.dist_metric(input_w, mus, sigs))
+            dists.append(self.dist_metric(input_mu, input_sig, mus, sigs))
         dists = torch.cat(dists)
         
         assert mode in ('softmin', 'argmin')
@@ -54,8 +54,8 @@ class quantiser(nn.Module):
         # should be measuring distance
         # However, mse is just a scaled down euclidean dist anyway
         # need to change to KL div if input_w is a distribution instead
-        loss_enc = F.mse_loss(quantised.view(input_w.shape).detach(), input_w)
-        loss_ref = F.mse_loss(quantised.view(input_w.shape), input_w.detach())
+        loss_enc = F.mse_loss(quantised.view(input_mu.shape).detach(), input_mu)
+        loss_ref = F.mse_loss(quantised.view(input_mu.shape), input_mu.detach())
 
         return quantised, loss_enc, loss_ref, dists
 
