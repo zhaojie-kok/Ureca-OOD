@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 
 def KL(mu1, sig1, mu2, sig2):
-    return torch.log(sig2/sig1) + (sig1**2+(mu1-mu2)**2)/(2*sig2**2) - 0.5
+    return torch.log(sig2/sig1 + 1e-5) + (sig1**2+(mu1-mu2)**2)/(2*sig2**2 + 1e-5) - 0.5
 
 def maha_dist(v1, s1, v2, s2):
     # assume v1 and v2 belong to same distribution, so s1=s2
