@@ -7,6 +7,7 @@ import torch.nn.parameter as param
 import torch.nn.functional as F
 import torch.optim as optim
 
+import copy
 import calc
 
 
@@ -108,8 +109,8 @@ class encoder(nn.Module):
             self.input_block = nn.Sequential(
                 nn.Linear(input_dim, hidden_dim),
                 nn.ReLU(),
-                nn.LayerNorm(hidden_dim), # maybe not since a vae shouldnt be trying to achieve regularisation
-                nn.Dropout(dropout_p) # maybe not since a vae shouldnt be trying to achieve regularisation
+                nn.Dropout(dropout_p),
+                nn.BatchNorm1d(hidden_dim)
             )
         else:
             self.input_block = input_block
@@ -118,20 +119,19 @@ class encoder(nn.Module):
             hidden_block = nn.Sequential(
                 nn.Linear(hidden_dim, hidden_dim),
                 nn.ReLU(),
-                nn.LayerNorm(hidden_dim), # maybe not since a vae shouldnt be trying to achieve regularisation
-                nn.Dropout(dropout_p) # maybe not since a vae shouldnt be trying to achieve regularisation
+                nn.Dropout(dropout_p),
+                nn.BatchNorm1d(hidden_dim)
             )
 
         blocks = nn.ModuleList()
         for i in range(n_layers):
-            blocks.append(hidden_block)
+
+            blocks.append(copy.deepcopy(hidden_block))
         self.blocks = nn.Sequential(*blocks)
 
         if (mu_block == None):
             self.mu_block = nn.Sequential(
                 nn.Linear(hidden_dim, latent_dim),
-                nn.ReLU(),
-                nn.LayerNorm(latent_dim), # maybe not since a vae shouldnt be trying to achieve regularisation
             )
         else:
             self.mu_block = mu_block
@@ -139,8 +139,6 @@ class encoder(nn.Module):
         if (sigma_block == None):
             self.sigma_block = nn.Sequential(
                 nn.Linear(hidden_dim, latent_dim),
-                nn.ReLU(),
-                nn.LayerNorm(latent_dim), # maybe not since a vae shouldnt be trying to achieve regularisation
             )
         else:
             self.sigma_block = sigma_block
@@ -232,12 +230,8 @@ class decoder(nn.Module):
             self.input_block = nn.Sequential(
                 nn.Linear(latent_dim, hidden_dim),
                 nn.ReLU(),
-                nn.LayerNorm(
-                    hidden_dim
-                ),  # maybe not since a vae shouldnt be trying to achieve regularisation
-                nn.Dropout(
-                    dropout_p
-                )  # maybe not since a vae shouldnt be trying to achieve regularisation
+                nn.Dropout(dropout_p),
+                nn.BatchNorm1d(hidden_dim)
             )
         else:
             self.input_block = input_block
@@ -246,26 +240,19 @@ class decoder(nn.Module):
             hidden_block = nn.Sequential(
                 nn.Linear(hidden_dim, hidden_dim),
                 nn.ReLU(),
-                nn.LayerNorm(
-                    hidden_dim
-                ),  # maybe not since a vae shouldnt be trying to achieve regularisation
-                nn.Dropout(
-                    dropout_p
-                )  # maybe not since a vae shouldnt be trying to achieve regularisation
+                nn.Dropout(dropout_p),
+                nn.BatchNorm1d(hidden_dim)
             )
 
         blocks = nn.ModuleList()
         for i in range(n_layers):
-            blocks.append(hidden_block)
+            blocks.append(copy.deepcopy(hidden_block))
         self.blocks = nn.Sequential(*blocks)
 
         if (output_block == None):
             self.output_block = nn.Sequential(
                 nn.Linear(hidden_dim, output_dim),
                 nn.ReLU(),
-                nn.LayerNorm(
-                    output_dim
-                ),  # maybe not since a vae shouldnt be trying to achieve regularisation
             )
         else:
             self.output_block = output_block
