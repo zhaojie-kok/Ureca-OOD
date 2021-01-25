@@ -48,7 +48,7 @@ class encoder(nn.Module):
 
         if (z_block == None):
             self.z_block = nn.Sequential(
-                nn.Linear(hidden_dim, hidden_dim)
+                nn.Linear(hidden_dim, latent_dim)
             )
         else:
             self.z_block = z_block
