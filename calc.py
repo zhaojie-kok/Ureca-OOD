@@ -22,3 +22,19 @@ def maha_cos(v1, s1, v2, s2):
 def arith_mean(tensors):
     return sum(tensors)/len(tensors)
 
+def f1(preds, labels, threshold=None):
+    if threshold != None:
+        preds = 1*(preds > threshold)
+    
+    tp = torch.sum(preds * labels)
+    fp = torch.sum(preds * (1-labels))
+    tn = torch.sum((1-preds) * (1-labels))
+    fn = torch.sum((1-preds) * labels)
+
+    return tp/(tp + 0.5*(fp+fn))
+
+def acc(preds, labels, threshold=None):
+    if threshold != None:
+        preds = 1*(preds > threshold)
+
+    return torch.sum(preds * labels)/labels.nelement()
